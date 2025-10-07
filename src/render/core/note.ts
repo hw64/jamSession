@@ -5,7 +5,9 @@ export interface NoteState { // for whatever dumbass reason interfaces are struc
   x: number;
   /** vertical position in tones. NTS: Called "y" because tones may want mapping. */
   y: number;
+  /** length in ticks */
   width: number;
+  /** purely visual */
   height: number;
   fill?: string;
 }

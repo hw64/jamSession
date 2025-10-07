@@ -1,5 +1,7 @@
+// INIT/MAIN FILE
+// Everything starts here.
 import Konva from 'konva';
-import { Note, NoteState } from './note';
+import { Note, NoteState } from './render/core/note';
 
 console.log("starting...");
 var jsWarning = document.getElementById("jsWarning"); // you need js to run this (duh)
@@ -15,6 +17,16 @@ export default function init() {
   ctx.fillStyle = '#55f';
   ctx.fillRect(100, 100, 150, 80); // test rectangle
 }
+
+/*
+const audioCtx = new AudioContext();
+await audioCtx.resume(); // needed after user gesture
+
+const osc = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
+osc.connect(gain).connect(audioCtx.destination);
+**/
+
 // create new canvas
 const stage = new Konva.Stage({
   container: 'container',
@@ -47,7 +59,7 @@ const demoNote = Note.create(pianoRoll, {
 });
 pianoRoll.draw();
 
-
+//TODO: Handle this properly; Probably in pianoRoll class that nets all input
 stage.on('click', (e) => {
   // Ignore clicks on existing shapes
   if (e.target !== stage) return;
@@ -66,6 +78,7 @@ stage.on('click', (e) => {
   notes.push(newNote);
   pianoRoll.draw();
 });
+
 
 // Serialization
 function saveNotes(): string {
@@ -86,6 +99,8 @@ function loadNotesFromDisk(json: string) {
   pianoRoll.draw();
 }
 
+// TODO: Create new layer
+
 // File load
 const fileInput = document.getElementById('fileInput') as HTMLInputElement | null;
 if (fileInput) {
@@ -100,8 +115,8 @@ if (fileInput) {
 
 // Export to file
 function downloadNotesToDisk() {
-  const blob = new Blob([saveNotes()], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
+  const draftBlob = new Blob([saveNotes()], { type: 'application/json' });
+  const url = URL.createObjectURL(draftBlob);
   const a = document.createElement('a');
   a.href = url;
   a.download = 'notes.json';
