@@ -1,9 +1,112 @@
-console.log("starting...");
-const canvas = document.getElementById("mainCanvas") as HTMLCanvasElement;
-var title = document.getElementById("title");
-const context = canvas.getContext("2d") as CanvasRenderingContext2D;
+import Konva from 'konva';
+import { Note, NoteState } from './note';
 
-canvas.width  = window.innerWidth; 
-canvas.height = window.innerHeight;
-context.font = " 20px Arial ";
-context.strokeText("Test", 10, 50);
+console.log("starting...");
+var jsWarning = document.getElementById("jsWarning"); // you need js to run this (duh)
+if (jsWarning)
+    jsWarning.remove();
+
+// konva init function. handled by konda (apparently)
+export default function init() {
+  const canvas = document.getElementById('mainCanvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  ctx.fillStyle = '#55f';
+  ctx.fillRect(100, 100, 150, 80); // test rectangle
+}
+// create new canvas
+const stage = new Konva.Stage({
+  container: 'container',
+  width: window.innerWidth,
+  height: window.innerHeight
+});
+
+const pianoRoll = new Konva.Layer();
+stage.add(pianoRoll);
+const notes: Note[] = [];
+
+// render the grid
+for (let i = 0; i < 128; i++) {
+  const y = i * 20;
+  const line = new Konva.Line({
+    points: [0, y, stage.width(), y],
+    stroke: '#2e2d33ff',
+    dashEnabled: true,
+    strokeWidth: 1
+  });
+  pianoRoll.add(line);
+}
+
+// temp note
+const demoNote = Note.create(pianoRoll, {
+  x: 100,
+  y: 60,
+  width: 120,
+  height: 20
+});
+pianoRoll.draw();
+
+
+stage.on('click', (e) => {
+  // Ignore clicks on existing shapes
+  if (e.target !== stage) return;
+  const pointerPos = stage.getPointerPosition();
+  if (!pointerPos) return;
+
+  const snappedY = Math.floor(pointerPos.y / 20) * 20;
+
+  const newNote = Note.create(pianoRoll, {
+    x: pointerPos.x,
+    y: snappedY,
+    width: 120,
+    height: 20
+  });
+
+  notes.push(newNote);
+  pianoRoll.draw();
+});
+
+// Serialization
+function saveNotes(): string {
+  const data = notes.map(n => n.toJSON());
+  return JSON.stringify(data);
+}
+
+function loadNotesFromDisk(json: string) {
+  notes.forEach(n => n.delete());
+  notes.length = 0;
+    // Deserialize individually
+  const deserialized = JSON.parse(json) as NoteState[];
+  for (const n of deserialized) {
+    const note = Note.create(pianoRoll, n);
+    notes.push(note);
+  }
+
+  pianoRoll.draw();
+}
+
+// File load
+const fileInput = document.getElementById('fileInput') as HTMLInputElement | null;
+if (fileInput) {
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => loadNotesFromDisk(reader.result as string);
+    reader.readAsText(file);
+  });
+}
+
+// Export to file
+function downloadNotesToDisk() {
+  const blob = new Blob([saveNotes()], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'notes.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+(window as any).downloadNotesFromDisk = downloadNotesToDisk; // Temporary global hook
