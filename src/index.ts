@@ -1,7 +1,8 @@
 // INIT/MAIN FILE
 // Everything starts here.
 import Konva from 'konva';
-import { Note, NoteState } from './render/core/note';
+import { Note, NoteState } from './core/note';
+import { PianoRoll } from './graphics/pianoRoll';
 
 console.log("starting...");
 var jsWarning = document.getElementById("jsWarning"); // you need js to run this (duh)
@@ -34,30 +35,26 @@ const stage = new Konva.Stage({
   height: window.innerHeight
 });
 
-const pianoRoll = new Konva.Layer();
-stage.add(pianoRoll);
-const notes: Note[] = [];
+const pianoRollLayer = new Konva.Layer();
 
-// render the grid
-for (let i = 0; i < 128; i++) {
-  const y = i * 20;
-  const line = new Konva.Line({
-    points: [0, y, stage.width(), y],
-    stroke: '#2e2d33ff',
-    dashEnabled: true,
-    strokeWidth: 1
-  });
-  pianoRoll.add(line);
-}
+const pianoRoll = new PianoRoll(pianoRollLayer);
+stage.add(pianoRollLayer);
+
+pianoRoll.buildGrid(128, stage.width());
+stage.container().addEventListener('wheel', () => {
+  
+  pianoRoll.buildGrid(128, stage.width());
+});
 
 // temp note
-const demoNote = Note.create(pianoRoll, {
+const demoNote = Note.create(pianoRollLayer, {
+  id: pianoRoll.focusedPattern.notes.length, // empty list -> new note with ID: 0, one note -> ID: 1, n notes -> ID: n
   x: 100,
   y: 60,
   width: 120,
   height: 20
 });
-pianoRoll.draw();
+pianoRollLayer.draw();
 
 //TODO: Handle this properly; Probably in pianoRoll class that nets all input
 stage.on('click', (e) => {
@@ -68,35 +65,36 @@ stage.on('click', (e) => {
 
   const snappedY = Math.floor(pointerPos.y / 20) * 20;
 
-  const newNote = Note.create(pianoRoll, {
+  const newNote = Note.create(pianoRollLayer, {
+    id: pianoRoll.focusedPattern.notes.length, // empty list -> new note with ID: 0, one note -> ID: 1, n notes -> ID: n
     x: pointerPos.x,
     y: snappedY,
     width: 120,
     height: 20
   });
 
-  notes.push(newNote);
-  pianoRoll.draw();
+  pianoRoll.focusedPattern.notes.push(newNote);
+  pianoRollLayer.draw();
 });
 
 
 // Serialization
 function saveNotes(): string {
-  const data = notes.map(n => n.toJSON());
+  const data = pianoRoll.focusedPattern.notes.map(n => n.toJSON());
   return JSON.stringify(data);
 }
 
 function loadNotesFromDisk(json: string) {
-  notes.forEach(n => n.delete());
-  notes.length = 0;
+  pianoRoll.focusedPattern.notes.forEach(n => n.delete());
+  pianoRoll.focusedPattern.notes.length = 0;
     // Deserialize individually
   const deserialized = JSON.parse(json) as NoteState[];
   for (const n of deserialized) {
-    const note = Note.create(pianoRoll, n);
-    notes.push(note);
+    const note = Note.create(pianoRollLayer, n);
+    pianoRoll.focusedPattern.notes.push(note);
   }
 
-  pianoRoll.draw();
+  pianoRollLayer.draw();
 }
 
 // TODO: Create new layer
