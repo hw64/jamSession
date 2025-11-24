@@ -1,0 +1,1 @@
+//TODO: Chord blocking system that "paints" notes as the scroll head progresses.

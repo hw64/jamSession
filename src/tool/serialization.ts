@@ -1,0 +1,2 @@
+/* TODO: This is disabled for now. Come up with a solution to serialize pattern by pattern, not just for a pianoRoll's rects.
+// Eventually use this for real serialization but just stick with json crap for now */

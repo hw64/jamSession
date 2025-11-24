@@ -1,13 +1,7 @@
 /**
- * PIANO ROLL (OBJECT)
+ * PATTERN VIEW (OBJECT)
  * 
- * Piano roll is the object and interface responsible for the graphical sequencing of notes in a pattern.
- * All GUI specifics as well as frontend conveniences are here. For instance:
- * - The visual rectangles representing notes
- * - The playhead line that scrolls as you play back
- * - The tick amounts the piano roll editor quantizes to
- * - How many lines the ruler draws
- * NOTICE: this file only contains data about graphics and behavior. Input logic is outsourced to pianoRoll.input.ts.
+ * Pattern view contains 
  */
 import Konva from 'konva';
 import { context } from '../core/context';
@@ -21,8 +15,7 @@ import { NoteRect } from './noteRect';
   const GRID_ROW_HEIGHT = 20;
   const GRID_ROW_LENGTH = 1000;
   const NOTE_LENGTH_SCROLL_DIVISOR = 25000;
-  export const NOTE_SNAP_X = 16;
-export class PianoRoll {
+export class PatternView {
 
 
 
@@ -31,19 +24,14 @@ export class PianoRoll {
   private playhead: Konva.Line;
   private playheadTick = 0;
 
-  public zoomX : number = 1.0;
-  public zoomY : number = 1.0;
-  public minZoom = 0.2;
-  public maxZoom = 4;
-  public zoomScalar = 1;
   /** Focal X point of piano roll "camera" measured in note ticks */
   public panX : number = 0;
   /** Focal Y point of piano roll "camera" measured in Y */
-  public panY : number = -300;
+  public panY : number = 0;
   public maxPan : number = 300;
   public minPan : number = 0;
   public panScalar : number = 150;
-  public focusedPattern : Pattern = context.currentPattern; //todo this is a temporary default pattern for vertical slice
+  public focusedPattern : Pattern = context.currentPattern; //TODO: This is a temporary "default pattern" for vertical slice
   /** The visual shapes of the notes in our current pattern. */
   private noteRects = new Map<number, NoteRect>();
   constructor(private readonly layer: Konva.Layer) {
@@ -74,25 +62,12 @@ export class PianoRoll {
     }
     this.staff = [];
     
-    
-    // draw vertical snap guides aligned to x quantization
-    for (let x = 0; x <= width; x += NOTE_SNAP_X) {
-      const isStrongBeat = x % (NOTE_SNAP_X * 4) === 0;
-      const line = new Konva.Line({
-        points: [x, 0, x, rowCount * rowHeight],
-        stroke: isStrongBeat ? '#2e2d32ff' : '#1d1c20ff',
-        dashEnabled: !isStrongBeat,
-        strokeWidth: isStrongBeat ? 1.5 : 1
-      });
-      this.layer.add(line);
-      this.staff.push(line);
-    }
     // draw rows
     for (let i = 0; i < rowCount; i++) {
       var y = i * rowHeight;
-      var color = '#1d1c20ff';
+      var color = '#2e2d33ff';
       if ((i % 12) == 0)
-        color = '#3c3c41ff';
+        color = '#5e5d63ff';
 
       var line = new Konva.Line({
         points: [0, y, width, y],
@@ -105,20 +80,16 @@ export class PianoRoll {
       this.staff.push(line);
     }
     // build existing notes
-    const snapOptions: NoteCreateOptions = { snapX: NOTE_SNAP_X, snapY: rowHeight };
+    const snapOptions: NoteCreateOptions = { snapX: 10, snapY: rowHeight };
     for (const note of this.focusedPattern.notes) {
-      this.registerNoteRect(note, snapOptions, NOTE_LENGTH_SCROLL_DIVISOR);
+      //TODO: Build existing patterns
     }
 
     this.updateElements();
     this.layer.batchDraw();
   }
-  /** update all visual konva elements. Used for zooming, panning, etc */
+  /** Update all visual konva elements. Used for zooming, panning, etc. */
   updateElements() : void {
-    this.layer.scale({
-      x: this.zoomX,
-      y: this.zoomY
-    });
     this.layer.position({
       x: this.panX,
       y: this.panY
@@ -137,32 +108,22 @@ export class PianoRoll {
     this.setPan(this.panX - (x * this.panScalar), this.panY - (y * this.panScalar));
   }
   nudgePan(x: number, y: number) {
-    this.incrementPan(x/this.zoomScalar, y/this.zoomScalar);
+    this.incrementPan(x, y);
   }
 
-  private clampZoom(value: number): number {
-    return Math.min(this.maxZoom, Math.max(this.minZoom, value));
-  }
-  setZoom(zoomX: number, zoomY: number): void {
-    this.zoomX = this.clampZoom(zoomX);
-    this.zoomY = this.clampZoom(zoomY);
-    this.updateElements();
-  }
-  incrementZoom(x: number, y: number): void {
-    this.setZoom(this.zoomX - (x * this.zoomScalar), this.zoomY - (y * this.zoomScalar));
-  }
-  /** translate and scale some screenspace coordinate to piano roll coordinate based on scale and pan */
+  /** Translate and scale some screenspace coordinate to piano roll coordinate based on scale and pan */
   screenToRoll(screen: Vector2d): Vector2d {
     return {
-      x: (screen.x - this.panX) / this.zoomX,
-      y: (screen.y - this.panY) / this.zoomY,
+      x: (screen.x - this.panX),
+      y: (screen.y - this.panY),
     };
   }
-
-  setPlayheadTickPos(tick: number): void {
+/** Set playhead position using tick (x) units. */
+  setPlayheadTick(tick: number): void {
     this.playheadTick = tick;
     this.updatePlayhead();
   }
+  
 
   /** Show or hide the playhead. */
   setPlayheadVisible(isVisible: boolean): void {
@@ -173,7 +134,7 @@ export class PianoRoll {
 
   private updatePlayhead(): void {
     const stageHeight = this.layer.getStage()?.height() ?? 0;
-    const unscaledHeight = stageHeight > 0 ? stageHeight / this.zoomY : 0;
+    const unscaledHeight = stageHeight > 0 ? stageHeight : 0;
     this.playhead.points([this.playheadTick, 0, this.playheadTick, 128 * 20]);
     this.layer.batchDraw();
   }
@@ -183,10 +144,6 @@ export class PianoRoll {
     this.layer.draw();
   }
 
-  registerNoteRect(note: Note, snapOptions: NoteCreateOptions, noteLengthScrollDivisor: number): void {
-    const rect = new NoteRect(this.layer, this, note, snapOptions, noteLengthScrollDivisor);
-    this.noteRects.set(note.state.id, rect);
-  }
 
   public removeNote(note: Note): void {
     const patternNotes = this.focusedPattern.notes;
