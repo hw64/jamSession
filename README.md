@@ -8,13 +8,13 @@ Welcome to jamSession. This is a WIP.
 
 Click to place notes. You can drag them if you misplace.
 
+Right click to delete notes.
+
 Scroll on a note to adjust its length.
 
 Scroll on the grid to pan around. Try not to pan your mouse over a note. This will be addressed later.
 
 Pinch to zoom. Yes, it's slow and off center. There were more important things to prioritize.
-
-Right click to delete notes.
 
 Press space -- or click the button -- to play and stop.
 
