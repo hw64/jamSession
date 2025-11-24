@@ -4,7 +4,8 @@
  * This is the sidebar list that contains all those instruments you create/destroy.
  * It's pretty self explanatory. A lot of ugly redundant code, mostly adapted from boilerplate GPT examples. Sue me.
  * There has to be a way to boil this down.
- * TODO: The scrolling code here could probably adapt some kind of shared scrollable logic from the pan code in pianoRoll.
+ * Not complex enough to justify its own input helper file, methinks.
+ * TODO: The scrolling code here could probably adapt some kind of shared scrollable logic from the pan code in pianoRoll?
  */
 import Konva from 'konva';
 import { context } from '../core/context';
