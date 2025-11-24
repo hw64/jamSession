@@ -3,6 +3,8 @@ This readme will be updated later but for now:
 
 Welcome to jamSession. This is a WIP. It's possible this readme will be outdated.
 
+Try it out [here](https://hw64.github.io/jamSession/).
+
 Click to place notes.
 
 Scroll on a note to adjust its length, maybe even by accident when you...
